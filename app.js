@@ -1,6 +1,9 @@
 // Create a new scene
 var scene = new THREE.Scene();
 scene.background = new THREE.Color("#080808");
+if(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+  document.querySelector(".ew-cursor").remove()
+}
 
 // Set up GSAP for cursor animation
 let isDragging = false;
