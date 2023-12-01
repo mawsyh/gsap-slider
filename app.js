@@ -15,24 +15,33 @@ gsap.set(".ew-cursor", { xPercent: -50, yPercent: 0 });
 let xTo = gsap.quickTo(".ew-cursor", "x", { duration: 0.6, ease: "power3" }),
   yTo = gsap.quickTo(".ew-cursor", "y", { duration: 0.6, ease: "power3" });
 
-// Set up mouse event listeners for dragging
-document.addEventListener("mousedown", (e) => {
+// Set up event listeners for dragging
+document.addEventListener("mousedown", startDrag, false);
+document.addEventListener("mousemove", onDrag, false);
+document.addEventListener("mouseup", endDrag, false);
+
+// Set up event listeners for touch events
+document.addEventListener("touchstart", startDrag, false);
+document.addEventListener("touchmove", onDrag, false);
+document.addEventListener("touchend", endDrag, false);
+
+function startDrag(e) {
   isDragging = true;
-  xStart = e.clientX;
-});
+  xStart = e.clientX || e.touches[0].clientX;
+}
 
-document.addEventListener("mousemove", (e) => {
-  xTo(e.clientX);
-  yTo(e.clientY);
-  if (isDragging) onMouseDrag(e);
-});
+function onDrag(e) {
+  xTo(e.clientX || e.touches[0].clientX);
+  yTo(e.clientY || e.touches[0].clientY);
+  if (isDragging) onMouseDrag(e.type === "touchmove" ? e.touches[0] : e);
+}
 
-document.addEventListener("mouseup", (e) => {
-  xEnd = e.clientX;
+function endDrag(e) {
+  xEnd = e.clientX || e.changedTouches[0].clientX;
   const diff = xEnd - xStart;
   xDirection = diff !== 0 ? Math.sign(diff) : xDirection;
   isDragging = false;
-});
+}
 
 // Set up the camera and renderer
 let height =
