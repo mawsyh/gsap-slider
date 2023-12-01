@@ -1,5 +1,8 @@
+// Create a new scene
 var scene = new THREE.Scene();
 scene.background = new THREE.Color("#080808");
+
+// Set up GSAP for cursor animation
 let isDragging = false;
 let xDirection = 1;
 let xStart, xEnd;
@@ -9,11 +12,10 @@ gsap.set(".ew-cursor", { xPercent: -50, yPercent: 0 });
 let xTo = gsap.quickTo(".ew-cursor", "x", { duration: 0.6, ease: "power3" }),
   yTo = gsap.quickTo(".ew-cursor", "y", { duration: 0.6, ease: "power3" });
 
+// Set up mouse event listeners for dragging
 document.addEventListener("mousedown", (e) => {
-  if (e.button === 0) {
-    isDragging = true;
-    xStart = e.clientX;
-  }
+  isDragging = true;
+  xStart = e.clientX;
 });
 
 document.addEventListener("mousemove", (e) => {
@@ -28,6 +30,8 @@ document.addEventListener("mouseup", (e) => {
   xDirection = diff !== 0 ? Math.sign(diff) : xDirection;
   isDragging = false;
 });
+
+// Set up the camera and renderer
 let height =
   window.innerWidth > 1600
     ? window.innerWidth * 0.6
@@ -42,15 +46,12 @@ var camera = new THREE.PerspectiveCamera(
   1000,
   0.1
 );
-var mouseX;
-var mouseY;
-
-const globe = document.querySelector("#globe");
-
 var renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, height);
+var globe = document.querySelector("#globe");
 globe.appendChild(renderer.domElement);
 
+// Resize event listener
 window.addEventListener("resize", function () {
   height =
     window.innerWidth > 1600
@@ -65,6 +66,7 @@ window.addEventListener("resize", function () {
   renderer.setSize(window.innerWidth, height);
 });
 
+// Set up the geometry for the globe
 var distance = Math.min(200, 800 / 4);
 var geometry = new THREE.Geometry();
 
@@ -80,14 +82,16 @@ for (var i = 0; i < 600; i++) {
   geometry.vertices.push(vertex);
 }
 
+// Set up the particles and their properties
 const size = 0.7;
-gsap.to(size, { duration: 0.7, x: 1.2, y: 1.2 });
+gsap.to(size, { duration: 0.7 });
 var particles = new THREE.Points(
   geometry,
   new THREE.PointsMaterial({ color: "white", size })
 );
 particles.boundingSphere = 50;
 
+// Set up the parent groups for the particles
 var renderingParent = new THREE.Group();
 renderingParent.add(particles);
 
@@ -97,11 +101,14 @@ scene.add(resizeContainer);
 
 camera.position.z = 400;
 
+// Set up the animation loop
 var animate = function () {
   requestAnimationFrame(animate);
   renderer.render(scene, camera);
 };
 var myTween;
+
+// Function to handle mouse dragging
 function onMouseDrag(event) {
   if (myTween) myTween.kill();
 
@@ -111,12 +118,11 @@ function onMouseDrag(event) {
     duration: 0.1,
     y: mouseX,
   });
-  //particles.rotation.x = mouseY*-1;
-  //particles.rotation.y = mouseX;
 }
+
 animate();
 
-// Scaling animation
+// Set up the GSAP animation properties
 var animProps = { scale: 1, xRot: 0, yRot: 0 };
 
 gsap.to(animProps, {
@@ -129,19 +135,33 @@ gsap.to(animProps, {
     renderingParent.rotation.set(0, xDirection * animProps.yRot, 0);
   },
 });
-
-// =================================================================
-
+// Register the Draggable plugin for GSAP
 gsap.registerPlugin(Draggable);
 
+// Initialize iteration variable
 let iteration = 0;
-gsap.set(".cards li", { xPercent: 400, opacity: 0, scale: 0 });
 
-const spacing = 0.2,
-  snapTime = gsap.utils.snap(spacing),
+// Get the viewport width
+const vw = window.innerWidth;
+
+// Set the start and end XPercent based on the viewport width
+const startXPercent = vw > 800 ? -400 : -800;
+const endXPercent = vw > 800 ? startXPercent + vw / 2.5 : 800;
+
+// Set the spacing based on the viewport width
+const spacing = vw > 1400 ? 0.2 : vw > 1000 ? 0.3 : vw > 800 ? 0.55 : 0.1;
+
+// Set the initial state of the cards
+gsap.set(".cards li", { xPercent: endXPercent, opacity: 0, scale: 0 });
+
+// Define utility functions and variables
+const snapTime = gsap.utils.snap(spacing),
   cards = gsap.utils.toArray(".cards li"),
   animateFunc = (element) => {
+    // Create a timeline for the animation
     const tl = gsap.timeline();
+
+    // Define the animation sequence for each card
     tl.fromTo(
       element,
       { scale: 0, opacity: 0 },
@@ -163,8 +183,13 @@ const spacing = 0.2,
       )
       .fromTo(
         element,
-        { xPercent: 400 },
-        { xPercent: -400, duration: 1, ease: "none", immediateRender: false },
+        { xPercent: endXPercent },
+        {
+          xPercent: startXPercent,
+          duration: 1,
+          ease: "none",
+          immediateRender: false,
+        },
         0
       );
     return tl;
@@ -193,6 +218,7 @@ const spacing = 0.2,
     trigger.update();
   };
 
+// Function to build a seamless loop for the animation
 function buildSeamlessLoop(items, spacing, animateFunc) {
   let rawSequence = gsap.timeline({ paused: true }),
     seamlessLoop = gsap.timeline({
@@ -208,6 +234,7 @@ function buildSeamlessLoop(items, spacing, animateFunc) {
     cycleDuration = spacing * items.length,
     dur;
 
+  // Create the animation sequence for each item
   items
     .concat(items)
     .concat(items)
@@ -216,6 +243,8 @@ function buildSeamlessLoop(items, spacing, animateFunc) {
       rawSequence.add(anim, i * spacing);
       dur || (dur = anim.duration());
     });
+
+  // Define the seamless loop animation
   seamlessLoop.fromTo(
     rawSequence,
     {
@@ -230,6 +259,7 @@ function buildSeamlessLoop(items, spacing, animateFunc) {
   return seamlessLoop;
 }
 
+// Create a draggable object
 Draggable.create(".drag-proxy", {
   type: "x",
   trigger: ".hero-wrapper",
@@ -243,7 +273,7 @@ Draggable.create(".drag-proxy", {
   },
 });
 
-// ==============
+// add random positions for images
 
 document.addEventListener("DOMContentLoaded", function () {
   const cards = document.querySelectorAll(".cards li");
